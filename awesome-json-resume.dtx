@@ -1,0 +1,949 @@
+% \iffalse meta-comment
+%
+% awesome-json-resume.dtx 
+%
+% Copyright © 2023 Chris Waltrip
+%
+% This work may be distributed and/or modified under the
+% conditions of the LaTeX Project Public License (SPDX: LPPL), 
+% either version 1.3 of this license or (at your option) any 
+% later version. The latest version of this license is at
+%   https://www.latex-project.org/lppl.txt
+% and version 1.3c or later is part of all distributions of LaTeX
+% version 2008 or later.
+%
+% This work has the LPPL maintenance status `maintained'.
+% 
+% The Current Maintainer of this work is Chris Waltrip.
+%
+% This work consists of all files listed in ./MANIFEST.md.
+%<*driver>
+\ProvidesFile{awesome-json-resume.dtx}[2023/08/08 My take on a resume class]
+\documentclass{l3doc}
+\RequirePackage{expl3}
+\ExplSyntaxOn
+% Need to fix Glyph to accept a custom color definition.
+\color_set:nnn{fontawesome-secondary}{RGB}{166, 171, 184}
+\ExplSyntaxOff
+\usepackage[
+  fonts = { 
+    fa = Font Awesome 6 Pro Regular,
+    fab = Font Awesome 6 Brands
+  },
+  dualglyphFonts = {
+    fad = Font Awesome 6 Duotone
+  },
+  dualglyphFontsSecondaryColor = {fontawesome-secondary},
+  forceLowercaseGlyphs = true
+]{glyph}
+\usepackage{hologo}
+
+\begin{document}
+  % \DisableImplementation
+  % \IncludeImplementation
+  \DocInput{\jobname.dtx}
+\end{document}
+%</driver>
+%
+% \fi
+%
+% \GetFileInfo{\jobname.sty}
+%
+% \title{The \cls{awesome-json-resume}\thanks{\href{https://github.com/cawaltrip/latex-awesome-json-resume}{\fabGithub/latex-awesome-json-resume}}\ \ class}
+% \author{Chris Waltrip\thanks{\href{https://github.com/cawaltrip}{\fabGithub/cawaltrip}}}
+% \date{Released \filedate}
+% \maketitle
+%
+% \changes{0.1.0}{2023-08-08}{Alpha release}
+%
+% \begin{documentation}
+%
+% \subsection{Predefined Colors}
+%   There are a number of predefined colors available
+%   \begin{itemize}
+%     \item myfirstcolor,
+%     \item mysecondcolor
+%   \end{itemize}
+%
+% \end{documentation}
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+% \begin{implementation}
+%
+% \section{\cls{awesome-json-resume} implementation}
+%
+% Start the \pkg{DocStrip} guards.
+%    \begin{macrocode}
+%<*class>
+%    \end{macrocode}
+% Identify the internal prefix (\hologo{LaTeX3} \pkg{DocStrip} convention)
+%    \begin{macrocode}
+%<@@=ajr>
+%    \end{macrocode}
+%
+% \subsection{Initial setup}
+%
+%    \begin{macrocode}
+%<*init>
+%    \end{macrocode}
+%
+% Here is where we declare all of the basic information about
+% the class, and do initial checks to make sure the class
+% will run (e.g., the version of \hologo{LaTeX2e} is new enough).
+%
+% I plan on writing more here once I make sure that this is building properly.
+%
+% Set up a couple of commands in recent-ish \LaTeXe{} releases.
+%    \begin{macrocode}
+\providecommand\DeclareRelease[3]{}
+\providecommand\DeclareCurrentRelease[2]{}
+%    \end{macrocode}
+% 
+% Provide current release information, and if necessary, older 
+% (breaking) releases.
+%    \begin{macrocode}
+% ^^A \DeclareRelease{x}{1970-01-01}{awesome-json-resume-oldversion.sty}
+\DeclareCurrentRelease{}{2023-08-08}
+%    \end{macrocode}
+%
+% Make sure \pkg{expl3} \enquote{up-front} is loaded, because we start using \hologo{LaTeX3}
+% syntax early on.
+%
+%    \begin{macrocode}
+\RequirePackage{expl3}
+%    \end{macrocode}
+%
+% Provide package information.
+%    \begin{macrocode}
+\ProvidesExplClass{awesome-json-resume}{2023-08-00}{0.1.0}
+  {My take on a resume class}
+%    \end{macrocode}
+%
+% This package is based on an empty article.
+%    \begin{macrocode}
+\LoadClass{article}
+\setlength{\headsep}{0em}
+\pagestyle{empty}
+%    \end{macrocode}
+%
+%
+% \subsection{Required Packages}
+%   These are all things that need to be declared before getting
+%   started with anything else.  This list is gonna get large 
+%   in a hurry I think.
+%    \begin{macrocode}
+\RequirePackage{fontspec}
+\RequirePackage[many]{tcolorbox}
+\RequirePackage{luatexbase}
+\RequirePackage{luacode}
+\RequirePackage{tikz}
+\RequirePackage{datetime2}
+\RequirePackage{enumitem}
+\RequirePackage{etoolbox}
+\ExplSyntaxOff
+\patchcmd
+  {\pgfutil@InputIfFileExists}
+  {\input #1}
+  {%
+    \@pushfilename
+    \xdef\@currname{#1}%
+    \input #1 %
+    \@popfilename
+  }
+  {}{}
+\ExplSyntaxOn
+\usetikzlibrary{positioning}
+\RequirePackage{xcolor}
+\RequirePackage{parskip}
+\RequirePackage[left=0.1in,top=0.5in,right=0.5in,bottom=0.5in,nohead,nofoot]{geometry}
+\color_set:nnn{fontawesome-secondary}{RGB}{166, 171, 184}
+\RequirePackage[
+  fonts = { 
+    fa = Font Awesome 6 Pro Regular,
+    fab = Font Awesome 6 Brands
+  },
+  dualglyphFonts = {
+    fad = Font Awesome 6 Duotone
+  },
+  dualglyphFontsSecondaryColor = {red},
+  forceLowercaseGlyphs = true
+]{glyph}
+\RequirePackage{calc}
+\RequirePackage{hyperref}
+%    \end{macrocode}
+%
+% \subsection{Required Libraries}
+%    \begin{macrocode}
+\directlua{require('awesome-json-resume')}
+%    \end{macrocode}
+%
+% \subsection{Variants}
+%    \begin{macrocode}
+\cs_generate_variant:Nn\use:n{V}
+%    \end{macrocode}
+%
+% \subsection{Early Internal Functions}
+%   These functions are needed for defining variables
+%   before options are even processed.
+%   \begin{macro}{\@@_color_set:nnn}
+%     A wrapper for setting color that creates colors both in 
+%     \hologo{LaTeX3}'s \pkg{l3colors} package as well as traditional
+%     \pkg{xcolor}, because \pkg{tikz} relies on xcolor.
+%     \begin{arguments}
+%       \item \marg{name}, the color we're defining
+%       \item \marg{model}, the color model to use (e.g., |gray|, 
+%             |RGB|, |HTML|)
+%       \item \marg{definition}, the definition of the color
+%     \end{arguments}
+%    \begin{macrocode}
+\cs_new_protected:Nn\@@_color_set:nnn {
+  \color_set:nnn {#1}{#2}{#3}
+  \definecolor {#1}{#2}{#3}
+}
+%    \end{macrocode}
+%   \end{macro}
+%
+%
+%   \begin{macro}{\@@_color_set_eq:nnn}
+%     A wrapper for assigning one color to the definition of another 
+%     in both \hologo{LaTeX3}'s \pkg{l3colors} package as well as
+%     traditional \pkg{xcolor}, because \pkg{tikz} relies on \pkg{xcolor}.
+%     \begin{arguments}
+%       \item \marg{name}, the color to define/assign
+%       \item \marg{source}, the color to use
+%     \end{arguments}
+%    \begin{macrocode}
+\cs_new_protected:Nn\@@_color_set_eq:nn {
+  \color_set_eq:nn{#1}{#2}
+  \colorlet{#1}{#2}
+}
+%    \end{macrocode}
+%   \end{macro}
+%
+% \begin{macro}{\@@_bool_from_str:n}
+% To be honest, I don't actually think I need this, and that it's just a relic
+% left over from when I was trying to understand how \cs{DeclareKeys} worked.
+% I'll leave it in for now until I test otherwise (because it ain't broke).
+%    \begin{macrocode}
+\cs_generate_variant:Nn\str_if_eq:nnTF {eeTF}
+\prg_new_conditional:Npnn \@@_bool_from_str:n #1 { p, TF } {
+  \str_if_eq:eeTF{\str_casefold:n{true}}{\str_casefold:n{#1}}{\prg_return_true:}{\prg_return_false:}
+}
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\@@_print_section_title:nnn}
+%   This is used to keep track of what color to print the next
+%   section header as.
+%   \begin{arguments}
+%     \item \marg{section}, the section name to print.
+%     \item \oarg{icon}, an icon to diplay at the beginning of 
+%           the section.
+%     \item \oarg{color}, the color to use for the section.  Not 
+%           currently implemented.
+%   \end{arguments}
+%    \begin{macrocode}
+\cs_set:Npn\@@_print_section_title:nnn #1#2#3 {
+  \setfontfamily\headingfont{\g_@@_headingfont_tl}
+
+  \tl_set:Nn\l_tmpa_tl{#1}
+  \tl_set:Nn\l_tmpb_tl{#3}
+
+  \tl_if_blank:nTF{\l_tmpb_tl}{
+    \int_set:Nn\l_tmpa_int{\int_mod:nn{\g_@@_section_counter_int}{7}}
+    \int_case:nnF{\l_tmpa_int}{
+      {1} {\@@_color_set_eq:nn{currentsection}{red}}
+      {2} {\@@_color_set_eq:nn{currentsection}{yellow}}
+      {3} {\@@_color_set_eq:nn{currentsection}{orange}}
+      {4} {\@@_color_set_eq:nn{currentsection}{green}}
+      {5} {\@@_color_set_eq:nn{currentsection}{blue}}
+      {6} {\@@_color_set_eq:nn{currentsection}{indigo}}
+      {0} {\@@_color_set_eq:nn{currentsection}{purple}}
+    } {
+      \@@_color_set_eq:nn{currentsection}{black}
+    }
+  } {
+    % Need to make sure this is passed in correctly.
+    \@@_color_set_eq:nn{currentsection}{\l_tmpb_tl}
+  }
+
+  \int_gincr:N\g_@@_section_counter_int
+
+  \begin{tikzpicture}
+    \node[draw] (heading-icon) at (0,0) {\Huge #2};
+    \node[draw,anchor=west,right=1em~of~heading-icon] (heading-title) {\LARGE\headingfont{\color{currentsection}\tl_range:nnn{#1}{1}{3}}\tl_range:nnn{#1}{4}{-1}\\};
+    \coordinate[below=0.75em~of~heading-title.south~west]  (heading-rule-start);
+    \draw [line~width=0.1cm, currentsection, anchor=north~west] (heading-rule-start) -- ++(\textwidth-5em,0);
+  \end{tikzpicture}
+}
+
+%    \end{macrocode}
+% \end{macro}
+%
+%
+%
+%    \begin{macrocode}
+%</init>
+%    \end{macrocode}
+%
+%
+% \subsection{Global Variables}
+%   These are variables with initial values set. They can be changed 
+%   by the user.
+%    \begin{macrocode}
+%<*options>
+%    \end{macrocode}
+%
+% \subsubsection{General}
+% \begin{variable}{\g_@@_resumepath_tl}
+%   Stores the path to the résumé for parsing later.
+%    \begin{macrocode}
+\tl_new:N\g_@@_resumepath_tl
+%    \end{macrocode}
+% \end{variable}
+%
+% \begin{variable}{\g_@@_sections_clist}
+%   Stores the order that sections should be displayed in.
+%    \begin{macrocode}
+\clist_clear_new:N\g_@@_sections_clist
+%    \end{macrocode}
+% \end{variable}
+% 
+% \begin{variable}{\g_@@_last_section_created_tl}
+%   Globally keep track of the last section that was created
+%   so that the next section to be created knows to reference it
+%   if needed.
+%    \begin{macrocode}
+\clist_clear_new:N\g_@@_sections_clist
+%    \end{macrocode}
+% \end{variable}
+%
+% \begin{variable}{\g_@@_debug_bool}
+%   Used for printing debug information in Lua files.
+%    \begin{macrocode}
+\bool_new:N\g_@@_debug_bool
+%    \end{macrocode} 
+% \end{variable}
+%
+% \begin{variable}{\g_@@_names_clist}
+%   Stores a list of up to two items, the |first name group|, and 
+%   the |last name group|.
+%    \begin{macrocode}
+\clist_clear_new:N\g_@@_names_clist
+%    \end{macrocode}
+% \end{variable}
+% 
+% \begin{variable}{\g_@@_separate_names_bool}
+%   Should the different names (e.g., first vs. last names) be
+%   formatted differently?  Currently this means that the first
+%   name group isn't stylized and the last name group is bolded.
+%    \begin{macrocode}
+\bool_new:N\g_@@_separate_names_bool
+%    \end{macrocode}
+% \end{variable}
+% 
+% \begin{variable}{\g_@@_name_group_separation_point_int}
+%   In the case of names that have spaces in them, we need to
+%   which space indicates the split between the first name group
+%   and the last.  This is an integer that represents that.  By
+%   default, this value is |1|.
+%    \begin{macrocode}
+\int_zero_new:N\g_@@_name_group_separation_point_int
+\int_gset:Nn\g_@@_name_group_separation_point_int{1}
+%    \end{macrocode}
+% \end{variable}
+% 
+% \begin{variable}{\g_@@_section_counter_int}
+%   Used to change the color of the start of section headings.
+%    \begin{macrocode}
+\int_zero_new:N\g_@@_section_counter_int
+\int_gset:Nn\g_@@_section_counter_int{1}
+%    \end{macrocode}
+% \end{variable}
+% 
+% \begin{variable}{\g_@@_first_profile_printed_bool}
+%   Cheat and create a global boolean that will be set to
+%   true after the first time it's called and never be changed
+%   afterward.  Will be used to add a separator between profiles.
+%    \begin{macrocode}
+\bool_new:N\g_@@_first_profile_printed_bool
+\bool_set_eq:NN\g_@@_first_profile_printed_bool\c_false_bool
+%    \end{macrocode}
+% \end{variable}
+%
+% \begin{variable}{\g_@@_current_section_clist}
+%   Stores the details of the current section that's
+%   being printed.
+%    \begin{macrocode}
+\clist_clear_new:N\g_@@_current_section_clist
+%    \end{macrocode}
+% \end{variable}
+%
+% \begin{variable}{\g_@@_work_glyph_tl, \g_@@_volunteer_glyph_tl, 
+%                  \g_@@_education_glyph_tl, \g_@@_awards_glyph_tl, 
+%                  \g_@@_certificates_glyph_tl, \g_@@_publications_glyph_tl, 
+%                  \g_@@_skills_glyph_tl, \g_@@_languages_glyph_tl, 
+%                  \g_@@_interests_glyph_tl, \g_@@_projects_glyph_tl, 
+%                  \g_@@_references_glyph_tl}
+%   Stores the icon for each section title.
+%    \begin{macrocode}
+\tl_clear_new:N\g_@@_work_glyph_tl
+\tl_clear_new:N\g_@@_volunteer_glyph_tl
+\tl_clear_new:N\g_@@_education_glyph_tl
+\tl_clear_new:N\g_@@_awards_glyph_tl
+\tl_clear_new:N\g_@@_certificates_glyph_tl
+\tl_clear_new:N\g_@@_publications_glyph_tl
+\tl_clear_new:N\g_@@_skills_glyph_tl
+\tl_clear_new:N\g_@@_languages_glyph_tl
+\tl_clear_new:N\g_@@_interests_glyph_tl
+\tl_clear_new:N\g_@@_projects_glyph_tl
+\tl_clear_new:N\g_@@_references_glyph_tl
+
+%    \end{macrocode}
+% \end{variable}
+%
+% \subsubsection{Color Names}
+%    \begin{macrocode}
+\@@_color_set:nnn{white}{RGB}{255, 255, 255}
+\@@_color_set:nnn{lightgray}{RGB}{158, 158, 158}
+\@@_color_set:nnn{gray}{RGB}{117, 117, 117}
+\@@_color_set:nnn{darkgray}{RGB}{21,21,21}
+\@@_color_set:nnn{black}{RGB}{0, 0, 0}
+\@@_color_set:nnn{red}{RGB}{255,59,48}
+\@@_color_set:nnn{orange}{RGB}{255, 149, 0}
+\@@_color_set:nnn{yellow}{RGB}{255, 204, 0}
+\@@_color_set:nnn{green}{RGB}{40, 205, 65}
+\@@_color_set:nnn{blue}{RGB}{0, 122, 255}
+\@@_color_set:nnn{indigo}{RGB}{88, 86, 214}
+\@@_color_set:nnn{purple}{RGB}{175, 82, 222}
+%    \end{macrocode}
+%
+% \subsubsection{Colors Used}
+%    \begin{macrocode}
+\@@_color_set_eq:nn{header}{black}
+\@@_color_set_eq:nn{headerbg}{white}
+\@@_color_set_eq:nn{headingaccent}{indigo}
+\@@_color_set_eq:nn{headingmain}{black}
+\@@_color_set_eq:nn{workheading}{red}
+\@@_color_set_eq:nn{volunteerheading}{orange}
+\@@_color_set_eq:nn{educationheading}{yellow}
+\@@_color_set_eq:nn{awardsheading}{green}
+\@@_color_set_eq:nn{certificatesheading}{blue}
+\@@_color_set_eq:nn{publicationsheading}{indigo}
+\@@_color_set_eq:nn{skillsheading}{purple}
+\@@_color_set_eq:nn{languagesheading}{red}
+\@@_color_set_eq:nn{interestsheading}{orange}
+\@@_color_set_eq:nn{referencesheading}{yellow}
+\@@_color_set_eq:nn{projectsheading}{green}
+%    \end{macrocode}
+%
+% \subsection{Fonts}
+% \begin{variable}{\g_@@_headerfont_tl, \g_@@_headingfont_tl, \g_@@_mainfont_tl}
+%   These variables contain the names of the fonts the user wants to use for:
+%   \begin{itemize}
+%     \item header - full name at top of resume,
+%     \item heading - each individual section name (e.g., Work, Education), and
+%     \item main - the main font.
+%   \end{itemize}
+%    \begin{macrocode}
+\tl_new:N\g_@@_headerfont_tl
+\tl_new:N\g_@@_headerthinfont_tl
+\tl_new:N\g_@@_headingfont_tl
+\tl_new:N\g_@@_mainfont_tl
+%    \end{macrocode}
+% \end{variable}
+%
+%
+% \subsection{\cls{awesome-json-resume} class options}
+%   All of the options specified here (except for \marg{resume-path}),
+%   can be redefined later by calling \cs{AJRSetup}, one of the other
+%   defined setter commands, or in some instances, by directly updating
+%   the variable.
+%
+%    \begin{macrocode}
+\DeclareKeys[ajr] {
+  resumepath .store = \g_@@_resumepath_tl,
+  headerfont .store = \g_@@_headerfont_tl,
+  headerthinfont .store = \g_@@_headerthinfont_tl,
+  headingfont .store = \g_@@_headingfont_tl,
+  mainfont .store = \g_@@_mainfont_tl,
+  headercolor .code = \@@_color_set_eq:nn{header}{#1},
+  headerbgcolor .code = \@@_color_set_eq:nn{headerbg}{#1},
+  headingaccentcolor .code = \@@_color_set_eq:nn{headingaccent}{#1},
+  headingmaincolor .code = \@@_color_set_eq:nn{headingmain}{#1},
+  workheadingcolor .code = \@@_color_set_eq:nn{workheading}{#1},
+  volunteerheadingcolor .code = \@@_color_set_eq:nn{volunteerheading}{#1},
+  educationheadingcolor .code = \@@_color_set_eq:nn{educationheading}{#1},
+  awardsheadingcolor .code = \@@_color_set_eq:nn{awardsheading}{#1},
+  certificatesheadingcolor .code = \@@_color_set_eq:nn{certificatesheading}{#1},
+  publicationsheadingcolor .code = \@@_color_set_eq:nn{publicationsheading}{#1},
+  skillsheadingcolor .code = \@@_color_set_eq:nn{skillsheading}{#1},
+  languagesheadingcolor .code = \@@_color_set_eq:nn{languagesheading}{#1},
+  interestsheadingcolor .code = \@@_color_set_eq:nn{interestsheading}{#1},
+  referencesheadingcolor .code = \@@_color_set_eq:nn{referencesheading}{#1},
+  projectsheadingcolor .code = \@@_color_set_eq:nn{projectsheading}{#1},
+  separatenames .code = \bool_set:Nn\g_@@_separate_names_bool{\@@_bool_from_str_p:n{#1}},
+  separationpoint .code = \int_gset:Nn\g_@@_name_group_separation_point_int{#1},
+
+  work .store = \g_@@_work_glyph_tl,
+  volunteer .store = \g_@@_volunteer_glyph_tl,
+  education .store = \g_@@_education_glyph_tl,
+  awards .store = \g_@@_awards_glyph_tl,
+  certificates .store = \g_@@_certificates_glyph_tl,
+  publications .store = \g_@@_publications_glyph_tl,
+  skills .store = \g_@@_skills_glyph_tl,
+  languages .store = \g_@@_languages_glyph_tl,
+  interests .store = \g_@@_interests_glyph_tl,
+  projects .store = \g_@@_projects_glyph_tl,
+  references .store = \g_@@_references_glyph_tl,
+
+  debug .code = \bool_set:Nn\g_@@_debug_bool{\@@_bool_from_str_p:n{#1}},
+
+  resumepath .usage = preamble,
+  headerfont .usage = general,
+  headerthinfont .usage = general,
+  headingfont .usage = general,
+  mainfont .usage = general,
+  headercolor .usage = general,
+  headerbgcolor .usage = general,
+  headingaccentcolor .usage = general,
+  headingmaincolor .usage = general,
+  workheadingcolor .usage = general,
+  volunteerheadingcolor .usage = general,
+  educationheadingcolor .usage = general,
+  awardsheadingcolor .usage = general,
+  certificatesheadingcolor .usage = general,
+  publicationsheadingcolor .usage = general,
+  skillsheadingcolor .usage = general,
+  languagesheadingcolor .usage = general,
+  interestsheadingcolor .usage = general,
+  referencesheadingcolor .usage = general,
+  projectsheadingcolor .usage = general,
+  debug .usage = general,
+  separatenames .usage = general,
+  separationpoint .usage = general,
+
+  work .usage = general,
+  volunteer .usage = general,
+  education .usage = general,
+  awards .usage = general,
+  certificates .usage = general,
+  publications .usage = general,
+  skills .usage = general,
+  languages .usage = general,
+  interests .usage = general,
+  projects .usage = general,
+  references .usage = general
+}
+
+\SetKeys[ajr]{
+  resumepath = {resume.json},
+  headerfont = "Arial",
+  headingfont = "Arial",
+  headerthinfont = \g_@@_headerfont_tl,
+  debug = false,
+  separatenames = true,
+
+  work = \fadBriefcase,
+  volunteer = \fadHandshakeAngle,
+  education = \fadGraduationCap,
+  awards = \fadAward,
+  certificates = \fadDiploma,
+  publications = \fadBullhorn,
+  skills = \fadScrewdriverWrench,
+  languages = \fadLanguage,
+  interests = \fadPinball,
+  projects = \fadAsterisk,
+  references = \fadUsers
+}
+
+\ProcessKeyOptions[ajr]
+%    \end{macrocode}
+% I should probably also pass keys to other packages (or do I do that automatically?).
+%    \begin{macrocode}
+%</options>
+%    \end{macrocode}
+% 
+%    \begin{macrocode}
+%<*interfaces>
+%    \end{macrocode}
+%
+%
+%
+%
+%
+%
+%
+%
+%
+% \subsection{Initialization}
+%   Load the résumé so that the user doesn't have to.  This
+%   isn't a big deal because we state that the résumé path needs
+%   to be set at preamble.  \cs{AJRSetup} will also call this
+%   function to update the table.
+%    \begin{macrocode}
+\lua_now:e{ajr.create_table_from_json("\luaescapestring{\g_@@_resumepath_tl}")}
+%    \end{macrocode}
+%
+%
+% \subsection{Document-level Commands}
+%   The document-level commands can be separated into setup commands 
+%   and generation commands.
+%
+% \subsubsection{Setup Command}
+%   These commands are basic setters for the different options that are 
+%   able to be set from \cs{documentclass}.
+%   \begin{macro}{\AJRSetup}
+%     This is the most general setup command.  It will handle whatever 
+%     could be set from the \cs{documentclass} command.
+%    \begin{macrocode}
+\NewDocumentCommand{\AJRSetup}{m}{
+  \keys_set:nn{ajr}{#1}
+  \lua_now:e{ajr.create_table_from_json("\luaescapestring{\g_@@_resumepath_tl}")}
+}
+%    \end{macrocode}
+%   \end{macro}
+%
+%
+% \begin{macro}{\section}
+%   Redefine the section command to look the way I want it to.
+%   \begin{arguments}
+%     \item \marg{name}, the section name
+%   \end{arguments}
+%    \begin{macrocode}
+\RenewDocumentCommand{\section}{s O{{github}} m}{
+  \par\vspace{\parskip}{%
+    %\tl_analysis_show:N#2
+    %\tl_analysis_show:N#3
+    \@@_print_section_title:nn{#3}{#2}%
+  }
+  \par\vspace{\parskip}
+}
+%    \end{macrocode}
+% \end{macro}
+%
+%
+% \begin{macro}{\sep}
+%   Define a character as a separator, and
+%   the amount of space to put around it.
+%   \begin{arguments}
+%     \item \oarg{}
+%    \begin{macrocode}
+\NewDocumentCommand{\sep}{O{1.0em} O{9474}}{
+  \hspace{#1} \symbol{#2} \hspace{#1}
+}
+%    \end{macrocode}
+% \end{macro}
+%
+%
+% \subsubsection{Résumé-generation Commands}
+%   These functions all make calls to their underlying Lua functions.
+%   \cs{GenerateResume} relies on the |order| array in the |metadata|
+%   key of the résumé JSON file.  The rest of the functions call 
+%   their underlying functions directly.  In this way, if an order
+%   wasn't setup, a user could still call each of the section they
+%   want to print.
+%   \begin{macro}{\CreateResume}
+%     Creates the entire résumé.
+%    \begin{macrocode}
+\NewDocumentCommand{\CreateResume}{}{ \lua_now:e{ajr.create_resume("\luaescapestring{\g_@@_resumepath_tl}")}}
+%    \end{macrocode}
+%   \end{macro}
+%   \begin{macro}{\CreateSection}
+%     Creates an individual section of the résumé.  This is the 
+%     function that all the following functions call.
+%   \begin{arguments}
+%     \item section, the section name to print, based on the key 
+%           names defined in the \enquote{JSON Resume} schema.
+%     \end{arguments}
+%    \begin{macrocode}
+\NewDocumentCommand{\CreateSection}{m}{ 
+  \lua_now:e{ajr.create_section(
+    "\luaescapestring{#1}",
+    "\luaescapestring{\g_@@_resumepath_tl}"
+  )}
+}
+%    \end{macrocode}
+%   \end{macro}
+%   \begin{macro}{\InitializeResume}
+%     Places just the header of the résumé on the page.
+%    \begin{macrocode}
+\NewDocumentCommand{\InitializeResume}{}{
+
+  \lua_now:e{ajr.create_table_from_json("\luaescapestring{\g_@@_resumepath_tl}")}
+  \_@@_create_header:
+}
+%    \end{macrocode}
+%   \end{macro}
+%
+% \subsection{Internal commands}
+%   These functions call out to Lua when necessary to parse
+%   the résumé JSON file and provide information back.
+% \begin{macro}{\_@@_get_section_order:n}
+%   Call back to Lua and retrive the \enquote{order} to display the 
+%   résumé sections as a |CList|.
+%    \begin{macrocode}
+\cs_set_protected:Npn\_@@_get_section_order: {
+  \clist_gclear:N\g_@@_sections_clist
+  \str_set:Nn\l_tmpa_str{\g_@@_sections_clist}
+  \lua_now:e{ajr.get_section_order("\luaescapestring{\l_tmpa_str}")}
+  %\clist_show:N\g_@@_sections_clist
+}
+%    \end{macrocode}   
+% \end{macro}
+% 
+% \begin{macro}{\_@@_create_header:}
+%   Internal function to create and print the header.
+%    \begin{macrocode}
+\cs_set:Npn\_@@_create_header: {
+  \clist_gclear:N\g_@@_names_clist
+  \clist_gclear:N\g_@@_profiles_clist
+  \clist_gclear:N\g_@@_email_clist
+  \str_set:Nn\l_tmpa_str{\g_@@_names_clist}
+  \lua_now:e{ajr.get_names(
+    "\luaescapestring{\l_tmpa_str}",
+    "\luaescapestring{\g_@@_separate_names_bool}",
+    \int_use:N\g_@@_name_group_separation_point_int
+  )}
+  % I've got the names in \g_@@_names_clist now
+
+  \str_set:Nn\l_tmpa_str{\g_@@_profiles_clist}
+  \lua_now:e{ajr.get_profiles("\luaescapestring{\l_tmpa_str}")}
+  % I've got a CList of key-val pairs to create a property map with
+  
+  \str_set:Nn\l_tmpa_str{\g_@@_email_clist}
+  \lua_now:e{ajr.get_email("\luaescapestring{\l_tmpa_str}")}
+  % I've got a CList with an email address to create a property map with.
+
+  \setfontfamily\headerfont{\g_@@_headerfont_tl}
+  \setfontfamily\headerthinfont{\g_@@_headerthinfont_tl}
+  \begin{tikzpicture}[remember~picture,overlay]
+    \node [rectangle, fill=headerbg, anchor=north, minimum~width=\paperwidth, minimum~height=4cm] (box) at (current~page.north){};
+    \node [anchor=south] (name) at (box) {%
+      \fontsize{40pt}{72pt}\color{header}%
+      \clist_pop:NN\g_@@_names_clist\l_tmpa_tl
+      {\headerthinfont\text_lowercase:n{\l_tmpa_tl}~}
+      \bool_if:NT\g_@@_separate_names_bool {
+        \clist_pop:NN\g_@@_names_clist\l_tmpb_tl
+        {\headerfont \text_lowercase:n{\l_tmpb_tl}}
+      }
+    };
+
+    % Collect the profiles
+    \node [anchor=north] at (name.south) {%
+      \fontsize{14pt}{24pt}\color{header}
+      %\clist_show:N\g_@@_profiles_clist
+      %\clist_show:N\g_@@_email_clist
+      \clist_map_function:NN\g_@@_email_clist\_@@_create_profile:N
+      \clist_map_function:NN\g_@@_profiles_clist\_@@_create_profile:n
+    };
+  \end{tikzpicture}
+  \vspace{2.5cm}
+  \vspace{-2\parskip}
+}
+
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\_@@_create_profile:nn}
+%   Create a link for a given profile record.
+%   \begin{arguments}
+%     \item \marg{key-val token list}, the profile to parse
+%   \end{arguments}
+%    \begin{macrocode}
+\cs_set_protected:Npn\_@@_create_profile:nn #1#2 {
+  \prop_put_from_keyval:Nn\l_tmpa_prop{#1}
+  %\prop_show:N\l_tmpa_prop
+  \tl_clear_new:N\l_@@_profile_network_tl
+  \tl_clear_new:N\l_@@_profile_username_tl
+  \tl_clear_new:N\l_@@_profile_url_tl
+
+  \prop_get:NnN\l_tmpa_prop{network}\l_@@_profile_network_tl
+  \prop_get:NnN\l_tmpa_prop{username}\l_@@_profile_username_tl
+  \prop_get:NnN\l_tmpa_prop{url}\l_@@_profile_url_tl
+
+  {
+    \headerfont
+    \bool_if:NT #2 {\sep}
+    \href{\l_@@_profile_url_tl}{\fabGlyph{\l_@@_profile_network_tl}/\str_use:N\l_@@_profile_username_tl}
+  }
+}
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\_@@_create_profile:n}
+%   Wrapper that just adds a boolean and passes it on to \cs{_@@_create_profile:nn}
+%   \begin{arguments}
+%     \item \marg{key-val token list}, the profile to parse
+%   \end{arguments}
+%    \begin{macrocode}
+\cs_set_protected:Npn\_@@_create_profile:n #1 {
+  \_@@_create_profile:nn{#1}{\c_true_bool}
+}
+%    \end{macrocode}
+% \end{macro}
+%
+%
+% \begin{macro}{\_@@_create_profile:N}
+%   Wrapper that just adds a boolean and passes it on to \cs{_@@_create_profile:nn}
+%   \begin{arguments}
+%     \item \marg{key-val token list}, the profile to parse
+%   \end{arguments}
+%    \begin{macrocode}
+\cs_set_protected:Npn\_@@_create_profile:N #1 {
+  \_@@_create_profile:nn{#1}{\c_false_bool}
+}
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\_@@_create_work_section:}
+%   Parse and create the work experience section.
+%    \begin{macrocode}
+\cs_set:Npn\_@@_create_work_section: {
+  \_@@_set_section_vars:n{work}
+
+  \@@_print_section_title:nnn{Work~Experience}{\g_@@_work_glyph_tl}{workheading}
+
+  % Need to do things here with the individual items.
+  % \clist_show:N\g_@@_current_section_clist
+  
+  \prop_clear_new:N\l_@@_current_item_prop
+  \tl_clear_new:N\l_@@_position_tl
+  \tl_clear_new:N\l_@@_company_tl
+  \tl_clear_new:N\l_@@_startdate_tl
+  \tl_clear_new:N\l_@@_enddate_tl
+  \tl_clear_new:N\l_@@_dates_tl
+  \tl_clear_new:N\l_@@_summary_tl
+  \tl_clear_new:N\l_@@_highlights_tl
+  \clist_clear_new:N\l_@@_highlights_clist
+
+  % \clist_show:N\g_@@_current_section_clist
+
+
+  \begin{itemize}[label={},left=4em,itemsep=2em]
+  \clist_map_inline:Nn\g_@@_current_section_clist {
+
+    \prop_put_from_keyval:Nn\l_@@_current_item_prop{##1}
+    % \prop_show:N\l_@@_current_item_prop
+    \prop_get:NnN\l_@@_current_item_prop{position}\l_@@_position_tl
+    \prop_get:NnN\l_@@_current_item_prop{name}\l_@@_company_tl
+    \prop_get:NnN\l_@@_current_item_prop{startDate}\l_@@_startDate_tl
+    \prop_get:NnN\l_@@_current_item_prop{endDate}\l_@@_endDate_tl
+    \prop_get:NnN\l_@@_current_item_prop{summary}\l_@@_summary_tl
+    \prop_get:NnN\l_@@_current_item_prop{highlights}\l_@@_highlights_tl
+    
+    
+    % \tl_analysis_show:N\l_@@_highlights_tl
+
+    \clist_set_eq:NN\l_@@_highlights_clist\l_@@_highlights_tl
+    % \clist_show:N\l_@@_highlights_clist
+
+    \DTMsavedate{startdate}{\l_@@_startDate_tl}
+    \tl_set:Nx\l_@@_dates_tl{\DTMfetchyear{startdate}}
+    % \tl_analysis_show:N\l_@@_dates_tl
+    % \tl_analysis_show:N\l_@@_endDate_tl
+    \quark_if_no_value:NTF\l_@@_endDate_tl {
+      \tl_put_right:Nn\l_@@_dates_tl{~--~Present}
+    } {
+      \DTMsavedate{enddate}{\l_@@_endDate_tl}
+      \tl_set:Nx\l_tmpa_tl{\DTMfetchyear{enddate}}
+      \int_compare:nNnF{\l_@@_dates_tl}={\l_tmpa_tl}{
+        \tl_put_right:Nn\l_@@_dates_tl{~--~}
+        \tl_put_right:NV\l_@@_dates_tl{\l_tmpa_tl}
+      }
+    }
+    % \tl_analysis_show:N\l_@@_position_tl
+    % \tl_analysis_show:N\l_@@_company_tl
+      \item \textbf{\l_@@_position_tl}\hfill\textbf{\l_@@_dates_tl}\\%
+            \l_@@_company_tl\par%
+            \l_@@_summary_tl\par%
+            \quark_if_no_value:NF\l_@@_highlights_clist {
+              \begin{itemize}
+                \clist_map_variable:NNn\l_@@_highlights_clist\l_tmpa_tl {
+                  \regex_replace_once:nnN {\d+[=]}{} \l_tmpa_tl
+                  \item \l_tmpa_tl
+                }
+              \end{itemize}
+            }
+          %  \begin{minipage}
+          %    \l_@@_summary_tl\par
+          %  \end{minipage}
+  }
+  \end{itemize}
+
+  % These are the different jobs
+  % \clist_get:NN\g_@@_current_section_clist\l_tmpa_tl
+
+
+
+  % \prop_set_from_keyval:Nn\l_@@_current_item_prop{\l_tmpb_tl}
+
+  % \prop_show:N\l_@@_current_item_prop
+
+}
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\_@@_print_work_item:n}
+%   Typesets an individual work experience item.
+%   \begin{arguments}
+%     \item \marg{work item}, a property map of work details.
+%   \end{arguments}
+%    \begin{macrocode}
+\cs_set:Npn\_@@_print_work_item:n #1 {
+  
+}
+
+%    \end{macrocode}
+% \end{macro}
+%
+%
+%
+%
+% \begin{macro}{\_@@_set_section_vars:n}
+%   Internal command to set the global section variables.
+%   \begin{arguments}
+%     \item \marg{section name}, the section to retrieve from 
+%           the JSON.
+%   \end{arguments}
+%    \begin{macrocode}
+\cs_set:Npn\_@@_set_section_vars:n #1 {
+  \clist_gclear:N\g_@@_current_section_clist
+
+  \tl_set:Nn\l_tmpa_tl{#1}
+  
+  \str_set:Nn\l_tmpa_str{\g_@@_current_section_clist}
+
+ \lua_now:e{ajr.get_section(
+   "\luaescapestring{\l_tmpa_tl}",
+   "\luaescapestring{\l_tmpa_str}"
+ )}
+}
+
+%    \end{macrocode}
+% \end{macro}
+%
+%    \begin{macrocode}
+%</interfaces>
+%    \end{macrocode}
+%
+%    \begin{macrocode}
+%</class>
+%    \end{macrocode}
+% \end{implementation}
+%
+% \PrintIndex

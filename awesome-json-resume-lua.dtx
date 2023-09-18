@@ -1,0 +1,399 @@
+% \iffalse meta-comment
+%
+% awesome-json-resume-lua.dtx 
+%
+% Copyright © 2023 Chris Waltrip
+%
+% This work may be distributed and/or modified under the
+% conditions of the LaTeX Project Public License (SPDX: LPPL), 
+% either version 1.3 of this license or (at your option) any 
+% later version. The latest version of this license is at
+%   https://www.latex-project.org/lppl.txt
+% and version 1.3c or later is part of all distributions of LaTeX
+% version 2008 or later.
+%
+% This work has the LPPL maintenance status `maintained'.
+% 
+% The Current Maintainer of this work is Chris Waltrip.
+%
+% This work consists of all files listed in ./MANIFEST.md.
+%<*driver>
+\ProvidesFile{awesome-json-resume-lua.dtx}[2023/08/08 My take on a resume class]
+\documentclass{l3doc}
+\usepackage{hologo}
+\DoNotIndex{\\}
+\begin{document}
+  % \DisableImplementation
+  % \IncludeImplementation
+  \DocInput{\jobname.dtx}
+\end{document}
+%</driver>
+%
+% \fi
+%
+% \GetFileInfo{awesome-json-resume.cls}
+%
+% \title{\LuaTeX{} implementation for \cls{awesome-json-resume}}
+%
+% \author{Chris Waltrip\thanks{\href{https://github.com/cawaltrip}{\fabGithub/cawaltrip}}}
+% \date{Released \filedate}
+% \maketitle
+% \tableofcontents
+%
+% \begin{documentation}
+%
+% \section{Introduction}
+% In the initial version of \cls{awesome-json-resume}, Lua is doing 
+% all of the lifting.  All of the main functions calls are just wrappers
+% for Lua calls to parse and create the sections.
+%
+% \end{documentation}
+%
+% \begin{implementation}
+%
+% \section{\texttt{glyph.lua} Implementation}
+% The source code is organized in the same way it's described in
+% the user-facing documentation.
+% \subsection{Namespace}
+% All of the functions are described in a local namespace to avoid collisions
+% globally.
+%    \begin{macrocode}
+%<*class>
+%    \end{macrocode}
+%    \begin{macrocode}
+%<*lua>
+%    \end{macrocode}
+%    \begin{macrocode}
+userdata = userdata or {}
+ajr = userdata
+
+ajr.resume = {}
+%    \end{macrocode}
+%
+% \subsection{Required Libraries}
+% 
+%    \begin{macrocode}
+require("lualibs.lua")
+
+%    \end{macrocode}
+%
+% \subsection{JSON Parser}
+%   
+% \begin{macro}{create_table_from_json()}
+%   This is a simple function that reads in a JSON file and returns
+%   its contents as a Lua table.  Right now, I don't know what will
+%   happen if the résumé JSON file isn't found.
+%   \begin{arguments}
+%     \item json_resume, the path to the JSON file to parse
+%   \end{arguments}
+%    \begin{macrocode}
+function ajr.create_table_from_json(json_resume)
+  local f = io.open(json_resume, 'r')
+  if not f then
+    print("ERROR: Could not find JSON file!") 
+    print("Tried: ``"..json_resume.."``")
+    return nil
+  end
+  local s = f:read('*a')
+  io.close(f)
+  ajr.resume = utilities.json.tolua(s)
+end
+
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{get_names()}
+%   Grabs the name from the resume table and returns a |CList| of
+%   up to two items: the |first name group| and |last_name_group|.
+%   up to the first space.  Assumes correctly formatted fields
+%   in the table/JSON file.
+%   \begin{arguments}
+%     \item return_cs, the command sequence to return the name to.
+%     \item separate_names, boolean of whether to separate the 
+%           names at all.
+%     \item separation_point, integer used to indicate where to
+%           split the two name groups.
+%   \end{arguments}
+%    \begin{macrocode}
+function ajr.get_names(return_cs, separate_names, separation_point)
+  return_cs = ajr.normalize_cs_name(return_cs)
+  separate_names = ajr.normalize_cs_boolean(separate_names)
+  separation_point = separation_point or 1
+
+  local fullname = ajr.resume["basics"]["name"]
+  _, n = string.gsub(fullname, " ", "")
+
+  if separation_point > n then
+    separation_point = 0
+  end
+
+  names = {}
+  for name in string.gmatch(fullname, "%S+") do
+    table.insert(names, name)
+  end
+
+%    \end{macrocode}
+%   This part sets the two groups, trims any whitespace and (if it 
+%   exists) concatenates the second group to the first in order 
+%   to return it.
+%    \begin{macrocode}
+  local first_name_group, last_name_group = ajr.split_and_concat_list(names, " ", separation_point)
+  local return_clist = first_name_group:gsub("^%s*(.-)%s*$", "%1")
+
+  if last_name_group then
+    return_clist = return_clist..","..last_name_group:gsub("^%s*(.-)%s*$", "%1")
+  end
+  
+  token.set_macro(return_cs, return_clist)
+end
+
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{get_section_order()}
+%   Retrieves the \enquote{order} defined in the metadata section 
+%   of the résumé JSON file, converts it to a |CList| and assigns it
+%   the value passed in.
+%   \begin{arguments}
+%     \item return_cs, the command sequence to return the name to
+%   \end{arguments}
+%    \begin{macrocode}
+function ajr.get_section_order(return_cs)
+  return_cs = ajr.normalize_cs_name(return_cs)
+
+  local order = ajr.resume["meta"]["order"]
+  if not order then
+    order = {
+      "work",
+      "volunteer",
+      "education",
+      "awards",
+      "certificates",
+      "publications",
+      "skills",
+      "languages",
+      "interests",
+      "projects",
+      "references"
+    }
+  end
+  order = ajr.split_and_concat_list(order)
+  token.set_macro(return_cs, order)
+end
+
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{get_profiles()}
+%   Grabs the name from the resume table and returns a |CList| of
+%   up to two items: the |first name group| and |last_name_group|.
+%   up to the first space.  Assumes correctly formatted fields
+%   in the table/JSON file.
+%   \begin{arguments}
+%     \item return_cs, the command sequence to return the name to.
+%   \end{arguments}
+%    \begin{macrocode}
+function ajr.get_profiles(return_cs)
+  return_cs = ajr.normalize_cs_name(return_cs)
+  
+  local profiles = ajr.resume["basics"]["profiles"]
+  local output = {}
+  for _, profile in pairs(profiles) do 
+    table.insert(output, ajr.table_to_property_map(profile, false))
+  end
+  
+  output = ajr.split_and_concat_list(output)
+  -- print("profile output = "..output)
+  token.set_macro(return_cs, output)
+
+end
+
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{get_email()}
+%   Returns the email address from the \enquote{basics} section.
+%   Creates an object similar to a profile so that it can be 
+%   parsed by the same function that the profiles are parsed with.
+%   \begin{arguments}
+%     \item return_cs, the command sequence to return the name to.
+%   \end{arguments}
+%    \begin{macrocode}
+function ajr.get_email(return_cs)
+  return_cs = ajr.normalize_cs_name(return_cs)
+  
+  local email_address = ajr.resume["basics"]["email"]
+  local results = {
+    ["network"] = "at", -- the glyph to use
+    ["username"] = email_address,
+    ["url"] = "mailto:"..email_address
+  }
+  local results = {results}
+  local output = {}
+  for _, profile in pairs(results) do
+    table.insert(output, ajr.table_to_property_map(profile, false))
+  end
+
+  output = ajr.split_and_concat_list(output)
+  token.set_macro(return_cs, output)
+
+end
+
+%    \end{macrocode}
+% \end{macro}
+%
+%
+% \begin{macro}{get_section()}
+%   Returns the data from the specified section if it exists.  If
+%   the section has glyph information is the meta section of the 
+%   JSON, it is returned as well.
+%   \begin{arguments}
+%     \item section_name, the section to look up and return.
+%     \item return_cs, the command sequence to return the name to.
+%     \item return_glyph_cs, the command sequence to return the
+%           glyph information to.
+%   \end{arguments}
+%    \begin{macrocode}
+function ajr.get_section(section_name, return_cs)
+  return_cs = ajr.normalize_cs_name(return_cs)
+
+  local results = ajr.resume[section_name]
+  if not results then
+    ajr.tex_error("section '"..section_name.."' does not exist in JSON.")
+    return nil
+  end
+
+  local output = {}
+  for _, subsection in pairs(results) do
+    table.insert(output, ajr.table_to_property_map(subsection, true))
+  end
+
+  output = ajr.split_and_concat_list(output)
+  -- print("section output = "..output)
+  token.set_macro(return_cs, output)
+
+end
+
+%    \end{macrocode}
+% \end{macro}
+%
+% \subsection{Helper Functions}
+%
+% \begin{macro}{normalize_cs_name()}
+%   Returns a CS name without the escape character (default |\|).
+%   \begin{arguments}
+%     \item csname, the command sequence
+%     \item escape_char, (optionally) the escape character
+%   \end{arguments}
+%    \begin{macrocode}
+function ajr.normalize_cs_name(csname, escape_char)
+  escape_char = escape_char or "\\"
+  csname = string.gsub(csname, "^"..escape_char, "")
+  return (csname:gsub("^%s*(.-)%s*$", "%1"))
+end
+
+%    \end{macrocode}
+%
+% \begin{macro}{normalize_cs_boolean()}
+%   Returns true/false/nil.  This makes sure that a string passed 
+%   from \TeX is converted into a proper boolean.
+%   \begin{arguments}
+%     \item boolean_cs, what to evaluate.
+%   \end{arguments}
+%    \begin{macrocode}
+function ajr.normalize_cs_boolean(boolean_cs)
+  if not boolean_cs then return false end
+  if (boolean_cs:lower() == "false") then return false end
+  if (boolean_cs:lower() == "true") then return true end
+  if (boolean_cs == false and boolean_cs ~= nil) then return false end
+  if (boolean_cs == true) then return true end
+  return nil
+end
+
+%    \end{macrocode}
+%
+% \begin{macro}{split_and_concat_list()}
+%   Takes a list, splits it into up to two groups,
+%   and for each group concatenates the values with a given
+%   separator.
+%   \begin{arguments}
+%     \item \marg{list}, table of values to split and concatenate
+%     \item \oarg{separation_point}, where to split the table (default |0|)
+%     \item \oarg{separator}, the string to join the table 
+%           entries with (default: "|,|").
+%   \end{arguments}
+%    \begin{macrocode}
+function ajr.split_and_concat_list(list, separator, separation_point)
+  if not list then return nil end
+  if (separation_point == 0) then
+    separation_point = nil
+  end
+  separation_point = separation_point or nil
+
+  separator = separator or ","
+
+  if not separation_point then
+    return table.concat(list, separator)
+  else
+    local first_list = table.concat(list, separator, 1, separation_point)
+    local second_list = table.concat(list, separator, separation_point+1, #list)
+    return first_list, second_list
+  end
+end
+
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{table_to_property_map()}
+%   Takes a Lua table and converts it into a \TeX property table.
+%   \begin{arguments}
+%     \item \marg{input_table}, the input to convert.
+%     \item \oarg{convert_spaces}, whether to convert spaces to ~.
+%   \end{arguments}
+%    \begin{macrocode}
+function ajr.table_to_property_map(input_table, convert_spaces)
+  convert_spaces = convert_spaces or false
+  local map = "{"
+  local q = '\"'
+  for k, v in pairs(input_table) do
+    map = map..k.."="
+    if type(v) == "table" then
+      map = map..ajr.table_to_property_map(v, convert_spaces)
+    else
+      if convert_spaces then
+        v = string.gsub(v, " ", "~")
+      end
+      map = map..v
+    end
+    map = map..","
+  end
+  map = map:sub(1,-2).."}" -- Get rid of extra comma at end and close map
+  -- print("map below")
+  -- print(map)
+  return map
+end
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{tex_error()}
+%   Throws a \TeX error from Lua.
+%   \begin{arguments}
+%     \item \marg{message}, the error message to throw
+%   \end{arguments}
+%    \begin{macrocode}
+function ajr.tex_error(message)
+  tex.print("\\unexpanded{\\ClassError{ajr}{"..message.."}}")
+end
+%    \end{macrocode}
+% \end{macro}
+
+
+%    \begin{macrocode}
+%</lua>
+%    \end{macrocode}
+%    \begin{macrocode}
+%</class>
+%    \end{macrocode}
+% \end{implementation}
+%
+% \PrintIndex
